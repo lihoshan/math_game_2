@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>梯形面積極速迷宮對決 🏎️ (21關 精準分層版)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700;800&family=Noto+Sans+TC:wght@600;800;900&display=swap');
+    
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: #070a12;
+      color: #f8fafc;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    .font-tech { font-family: 'Chakra Petch', sans-serif; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+
+    /* Glow Effects */
+    .glow-cyan { box-shadow: 0 0 25px rgba(6, 182, 212, 0.4); }
+    .glow-amber { box-shadow: 0 0 25px rgba(245, 158, 11, 0.4); }
+    .glow-emerald { box-shadow: 0 0 25px rgba(16, 185, 129, 0.4); }
+    .glow-purple { box-shadow: 0 0 25px rgba(168, 85, 247, 0.4); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 md:p-6 text-slate-100">
+
+  <!-- TOP NAVIGATION & VIEW CONTROLLER -->
+  <header class="max-w-7xl mx-auto w-full mb-4">
+    <div class="bg-slate-900/90 backdrop-blur-md border-2 border-slate-800 rounded-3xl p-4 flex flex-wrap justify-between items-center shadow-2xl gap-3">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-amber-400 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg">
+          <i class="fa-solid fa-flag-checkered"></i>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">
+            梯形面積極速迷宮對決 🏎️
+          </h1>
+        </div>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+        <button onclick="switchView('main')" id="btnViewMain" class="px-3 py-2 rounded-xl text-xs md:text-sm font-black transition bg-cyan-500 text-slate-950 shadow">
+          🖥️ 大螢幕總覽牆
+        </button>
+        <button onclick="switchView('g1')" id="btnViewG1" class="px-2.5 py-2 rounded-xl text-xs md:text-sm font-black text-cyan-400 hover:bg-slate-900 transition">
+          📱 第1組
+        </button>
+        <button onclick="switchView('g2')" id="btnViewG2" class="px-2.5 py-2 rounded-xl text-xs md:text-sm font-black text-amber-400 hover:bg-slate-900 transition">
+          📱 第2組
+        </button>
+        <button onclick="switchView('g3')" id="btnViewG3" class="px-2.5 py-2 rounded-xl text-xs md:text-sm font-black text-emerald-400 hover:bg-slate-900 transition">
+          📱 第3組
+        </button>
+        <button onclick="switchView('g4')" id="btnViewG4" class="px-2.5 py-2 rounded-xl text-xs md:text-sm font-black text-purple-400 hover:bg-slate-900 transition">
+          📱 第4組
+        </button>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="flex items-center gap-2">
+        <button onclick="toggleBriefingModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-xl border border-slate-700 transition">
+          <i class="fa-solid fa-book-open text-cyan-400 mr-1"></i> 指南
+        </button>
+        <button onclick="restartGame()" class="px-3.5 py-2 bg-rose-950/50 hover:bg-rose-900/70 text-rose-300 text-xs font-black rounded-xl border border-rose-800/60 transition">
+          <i class="fa-solid fa-rotate-right mr-1"></i> 重置賽局
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- VIEW 1: MAIN DISPLAY (TEACHER / WHITEBOARD TRACKING DASHBOARD) -->
+  <main id="mainScreenView" class="max-w-7xl mx-auto w-full flex-1 space-y-6">
+    <div class="bg-slate-900/90 border-2 border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-wrap justify-between items-center gap-4">
+      <div>
+        <span class="bg-cyan-950 text-cyan-300 border border-cyan-800 px-3.5 py-1 rounded-full text-xs font-black">
+          REAL-TIME LEADERBOARD & TRACKING
+        </span>
+        <h2 class="text-2xl font-black text-slate-100 mt-2 flex items-center gap-2">
+          <i class="fa-solid fa-gauge-high text-amber-400"></i> 各組迷宮對決進度總覽 (全 21 關)
+        </h2>
+        <p class="text-xs text-slate-400 mt-1 font-bold">每組於 iPad 自由答題推進，無需等待其他組別。最先到達第 21 格者奪冠！</p>
+      </div>
+
+      <button onclick="checkGameEndOrShowSummary()" class="px-5 py-2.5 bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-black text-xs md:text-sm rounded-xl shadow-lg hover:brightness-110 transition">
+        <i class="fa-solid fa-square-poll-vertical mr-1"></i> 查看完整賽後檢討報告
+      </button>
+    </div>
+
+    <!-- 4 GROUP RACE TRACKS -->
+    <div id="mainTracksContainer" class="grid grid-cols-1 gap-4"></div>
+  </main>
+
+  <!-- VIEW 2: IPAD COCKPIT VIEW -->
+  <main id="cockpitScreenView" class="hidden max-w-4xl mx-auto w-full flex-1 space-y-4">
+    
+    <!-- Group Cockpit Header -->
+    <div id="cockpitHeader" class="p-4 rounded-3xl border-2 flex justify-between items-center shadow-2xl bg-slate-900">
+      <div class="flex items-center gap-3">
+        <span id="cockpitGroupBadge" class="text-base font-black px-4 py-1.5 rounded-2xl border">
+          第一組 ⚡ 雷霆隊
+        </span>
+        <span id="cockpitTierTag" class="text-xs bg-slate-800 text-cyan-300 font-black px-3 py-1 rounded-xl border border-slate-700">
+          指定作答：高組組員
+        </span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="cockpitPosBadge" class="text-xs bg-slate-950 text-emerald-400 font-black px-3 py-1 rounded-xl border border-slate-800">
+          賽車位置：第 0 / 21 格
+        </span>
+        <span id="cockpitScore" class="font-tech text-amber-400 text-xl font-black">0 PTS</span>
+        <span id="cockpitCombo" class="text-xs bg-amber-950 text-amber-400 border border-amber-800 px-2.5 py-1 rounded-xl font-black">🔥 x1</span>
+      </div>
+    </div>
+
+    <!-- Question & Interactive Answer Pad -->
+    <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
+      
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <span id="cockpitLap" class="font-tech text-cyan-400 font-black text-base">LAP 01/21</span>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleHelperModal()" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-black transition">
+            💡 公式小幫手
+          </button>
+          <span id="cockpitStatusTag" class="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-full font-black">
+            請回答問題
+          </span>
+        </div>
+      </div>
+
+      <!-- Question Text -->
+      <h3 id="cockpitQuestionText" class="text-lg md:text-xl font-black text-slate-100 leading-relaxed">
+        題目載入中...
+      </h3>
+
+      <!-- IPAD EXCLUSIVE GEOMETRY SVG DRAWING -->
+      <div class="w-full bg-slate-950 rounded-2xl border border-slate-800 p-4 flex justify-center items-center shadow-inner relative min-h-[200px]">
+        <svg id="ipadTrapezoidSvg" class="w-full max-w-md h-48 drop-shadow-2xl" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid meet">
+        </svg>
+      </div>
+
+      <!-- Interactive Input Container -->
+      <div id="cockpitOptionsGrid" class="space-y-4"></div>
+
+      <!-- Feedback & Transition Controls -->
+      <div id="cockpitFeedback" class="hidden p-4 rounded-2xl border-2 text-sm font-black transition-all space-y-3">
+        <div id="cockpitFeedbackContent"></div>
+        <button onclick="advanceGroupNextLap()" id="btnCockpitNext" class="w-full py-3 bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-black text-base rounded-xl shadow-lg hover:brightness-110 active:scale-98 transition">
+          前進下一關 ➔
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- POST-RACE DIAGNOSTICS & SUMMARY SECTION -->
+  <section id="summarySection" class="hidden max-w-7xl mx-auto w-full mt-2">
+    <div class="bg-slate-900 p-6 rounded-3xl border-2 border-slate-800 shadow-2xl space-y-6">
+      
+      <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-black">
+            POST-RACE DIAGNOSTICS & REVIEW
+          </span>
+          <h2 class="text-2xl font-black text-slate-100 mt-1">賽後逐條診斷與課堂批判檢討 📋</h2>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-xl border border-slate-700 transition">
+            <i class="fa-solid fa-print"></i> 列印課堂戰報
+          </button>
+          <button onclick="restartGame()" class="px-4 py-2 bg-cyan-500 text-slate-950 text-xs font-black rounded-xl hover:brightness-110 transition">
+            再玩一次 🚀
+          </button>
+        </div>
+      </div>
+
+      <!-- Winner Podium Cards -->
+      <div id="podiumContainer" class="grid grid-cols-1 sm:grid-cols-4 gap-4"></div>
+
+      <!-- Detailed Review Table -->
+      <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-inner">
+        <div class="p-4 bg-slate-900/80 border-b border-slate-800 flex justify-between items-center">
+          <h4 class="font-black text-slate-200 text-base flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-cyan-400"></i> 全 21 條題目各組作答紀錄與批判提示
+          </h4>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs md:text-sm text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 font-black border-b border-slate-800">
+              <tr>
+                <th class="p-3.5 w-16">題號</th>
+                <th class="p-3.5 w-24">層級</th>
+                <th class="p-3.5">題目內容與正確答案</th>
+                <th class="p-3.5 w-64">4 組作答紀錄 (1組/2組/3組/4組)</th>
+                <th class="p-3.5">老師批判與迷思提示</th>
+              </tr>
+            </thead>
+            <tbody id="errorTableBody" class="divide-y divide-slate-800/60 font-medium"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FORMULA HELPER MODAL -->
+  <div id="helperModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-amber-500/50 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4 relative">
+      <button onclick="toggleHelperModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold">
+        ✕
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xl border border-amber-500/30">
+          💡
+        </div>
+        <h3 class="text-lg font-black text-amber-300">梯形面積公式小幫手</h3>
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+        <p class="text-sm font-black text-cyan-400 text-center bg-cyan-950/50 py-2 rounded-xl border border-cyan-800">
+          口訣：(上底 + 下底) × 高 ÷ 2
+        </p>
+        <ul class="text-xs space-y-2 text-slate-300">
+          <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-cyan-400"></span> <strong>上底：</strong>頂部平行的邊長</li>
+          <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> <strong>下底：</strong>底部平行的邊長</li>
+          <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-400"></span> <strong>高：</strong>兩底之間的垂直距離</li>
+          <li class="flex items-center gap-2 text-rose-300"><span class="w-2 h-2 rounded-full bg-rose-400"></span> <strong>注意：</strong>算完乘高後，別忘了「除以 2」！</li>
+        </ul>
+      </div>
+
+      <button onclick="toggleHelperModal()" class="w-full py-3 bg-amber-500 text-slate-950 font-black rounded-xl shadow-lg hover:brightness-110 transition">
+        我知道了，繼續比賽！
+      </button>
+    </div>
+  </div>
+
+  <!-- TEACHER BRIEFING MODAL -->
+  <div id="briefingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-slate-800 max-w-2xl w-full rounded-3xl p-6 shadow-2xl space-y-4 relative">
+      <button onclick="toggleBriefingModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold">
+        ✕
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-black text-xl border border-cyan-500/30">
+          <i class="fa-solid fa-chalkboard-user"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-black text-slate-100">21 關卡精準分層賽制指南</h3>
+          <p class="text-xs text-slate-400">第 1-6 題最簡單 ｜ 第 7-12 題選擇 ｜ 第 13-18 題填充 ｜ 第 19-21 題公式計算</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-xs leading-relaxed text-slate-300 max-h-96 overflow-y-auto pr-2">
+        <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+          <h4 class="font-black text-cyan-400 text-sm mb-1">1. 第 1 至 6 題（最簡單概念：拖拉/點選配對）</h4>
+          <p>• 第 1 題 (高組) & 第 4 題 (高組)<br>• 第 2、3、5、6 題 (初組)</p>
+        </div>
+        <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+          <h4 class="font-black text-emerald-400 text-sm mb-1">2. 第 7 至 12 題（選擇題辨識）</h4>
+          <p>提供四選一或六選一答案選項，學生可依能力快速選出正確選項。</p>
+        </div>
+        <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+          <h4 class="font-black text-amber-400 text-sm mb-1">3. 第 13 至 18 題（填充題）& 第 19 至 21 題（公式計算）</h4>
+          <p>循序漸進引導學生完成關鍵數值填充與梯形面積完整計算。</p>
+        </div>
+      </div>
+
+      <button onclick="toggleBriefingModal()" class="w-full py-3 bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-black rounded-xl shadow-lg hover:brightness-110 transition">
+        理解指南，開始賽局對決！
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* SOUND EFFECTS */
+    class SoundFX {
+      constructor() { this.ctx = null; }
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+      playCorrect() {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1);
+        osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+      playWrong() {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(130, now + 0.25);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+      playTurbo() {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.3);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+    }
+    const sfx = new SoundFX();
+
+    /* GAME CONFIG & STATE */
+    const GROUPS = [
+      { id: 1, name: "第一組", color: "cyan", borderClass: "border-cyan-500", bgClass: "bg-cyan-500", textClass: "text-cyan-400" },
+      { id: 2, name: "第二組", color: "amber", borderClass: "border-amber-500", bgClass: "bg-amber-500", textClass: "text-amber-400" },
+      { id: 3, name: "第三組", color: "emerald", borderClass: "border-emerald-500", bgClass: "bg-emerald-500", textClass: "text-emerald-400" },
+      { id: 4, name: "第四組", color: "purple", borderClass: "border-purple-500", bgClass: "bg-purple-500", textClass: "text-purple-400" }
+    ];
+
+    let activeView = "main";
+
+    let groupLaps = [0, 0, 0, 0];
+    let groupScores = [0, 0, 0, 0];
+    let groupPositions = [0, 0, 0, 0];
+    let groupCombos = [0, 0, 0, 0];
+    let groupSubmissions = [null, null, null, null];
+    
+    let questionLogs = [];
+    const QUESTION_BANK = [];
+
+    /* INITIALIZE EXACTLY 21 QUESTIONS */
+    function initQuestionBank() {
+      // Q1 to Q6: Simple Matching / Drag / Click Position
+      // Q1 (HIGH), Q2 (LOW), Q3 (LOW), Q4 (HIGH), Q5 (LOW), Q6 (LOW)
+      const q1to6 = [
+        { id: 1, targetTier: "HIGH", type: "DRAG_MATCH", text: "【方格配對】請將「上底」卡片點選或配對至圖中頂邊的框框：", a: 5, b: 9, h: 4, correctPos: "TOP", explanation: "頂部平行的邊為上底。", critiquePrompt: "引導高組學生精準辨識上底位置。" },
+        { id: 2, targetTier: "LOW", type: "CLICK_NUMBER", text: "【點選位置】請點選圖中代表「下底」長度的數字：", a: 4, b: 8, h: 5, targetKey: "B", explanation: "底部平行的邊長度為 8 cm。", critiquePrompt: "協助初組學生指認下底長度。" },
+        { id: 3, targetTier: "LOW", type: "CLICK_NUMBER", text: "【點選位置】請點選圖中代表垂直「高」的數字：", a: 6, b: 10, h: 4, targetKey: "H", explanation: "垂直線段的長度為高 4 cm。", critiquePrompt: "強化初組學生對高的概念。" },
+        { id: 4, targetTier: "HIGH", type: "DRAG_MATCH", text: "【方格配對】請將「高」卡片點選或配對至圖中垂直虛線旁的框框：", a: 7, b: 11, h: 6, correctPos: "HEIGHT", explanation: "兩底之間的垂直距離為高。", critiquePrompt: "引導高組學生確認垂直高的位置。" },
+        { id: 5, targetTier: "LOW", type: "CLICK_NUMBER", text: "【點選位置】請點選圖中代表「上底」長度的數字：", a: 3, b: 7, h: 5, targetKey: "A", explanation: "頂部的平行邊長度為 3 cm。", critiquePrompt: "複習初組學生對上底的記憶。" },
+        { id: 6, targetTier: "LOW", type: "MATCH_SYMBOL", text: "【符號配對】梯形面積公式最後一步要除以多少？請點選正確數字方格：", a: 5, b: 8, h: 4, correctVal: "2", options: ["2", "4", "8", "10"], explanation: "公式最後務必「除以 2」。", critiquePrompt: "提醒初組學生除以 2 口訣。" }
+      ];
+
+      q1to6.forEach(q => QUESTION_BANK.push(q));
+
+      // Q7 to Q12: Multiple Choice (4 or 6 options)
+      for (let i = 7; i <= 12; i++) {
+        const isHigh = (i === 10);
+        const a = 4 + (i % 3);
+        const b = a + 4 + (i % 2);
+        const h = 4;
+        const correctArea = ((a + b) * h) / 2;
+
+        let opts = [];
+        if (i <= 9) {
+          // 4-option MC
+          opts = [
+            { text: `${correctArea} cm²`, correct: true },
+            { text: `${(a + b) * h} cm²`, correct: false },
+            { text: `${correctArea + 3} cm²`, correct: false },
+            { text: `${a * b} cm²`, correct: false }
+          ];
+        } else {
+          // 6-option MC
+          opts = [
+            { text: `${correctArea} cm²`, correct: true },
+            { text: `${(a + b) * h} cm²`, correct: false },
+            { text: `${correctArea + 2} cm²`, correct: false },
+            { text: `${correctArea - 2} cm²`, correct: false },
+            { text: `${a + b + h} cm²`, correct: false },
+            { text: `${a * b * h} cm²`, correct: false }
+          ];
+        }
+
+        QUESTION_BANK.push({
+          id: i,
+          targetTier: isHigh ? "HIGH" : "LOW",
+          type: "MULTIPLE_CHOICE",
+          a: a, b: b, h: h,
+          text: `【選擇題】梯形上底 ${a} cm，下底 ${b} cm，高 ${h} cm。請選出正確面積：`,
+          options: shuffleArray(opts),
+          explanation: `公式：(${a} + ${b}) × ${h} ÷ 2 = ${correctArea} cm²`,
+          critiquePrompt: "觀察學生選擇時是否有出現忘記除以 2 的狀況。"
+        });
+      }
+
+      // Q13 to Q18: Fill-in-the-blank style
+      for (let i = 13; i <= 18; i++) {
+        const isHigh = (i === 13 || i === 16);
+        const a = 3 + (i % 4);
+        const b = a + 5;
+        const h = 6;
+        const sumAB = a + b;
+        const area = (sumAB * h) / 2;
+
+        QUESTION_BANK.push({
+          id: i,
+          targetTier: isHigh ? "HIGH" : "LOW",
+          type: "FILL_BLANK",
+          a: a, b: b, h: h,
+          text: `【填充題】梯形上底 ${a} cm，下底 ${b} cm，(上底 + 下底) 的總和是 ____ cm？`,
+          options: shuffleArray([
+            { text: `${sumAB} cm`, correct: true },
+            { text: `${a * b} cm`, correct: false },
+            { text: `${sumAB + 2} cm`, correct: false },
+            { text: `${sumAB - 1} cm`, correct: false }
+          ]),
+          explanation: `上底 + 下底 = ${a} + ${b} = ${sumAB} cm。`,
+          critiquePrompt: "引導學生先計算括號內上底加下底的和。"
+        });
+      }
+
+      // Q19 to Q21: Formula Calculation
+      for (let i = 19; i <= 21; i++) {
+        const isHigh = (i === 19);
+        const a = 6 + (i % 3);
+        const b = a + 6;
+        const h = 5;
+        const area = ((a + b) * h) / 2;
+
+        QUESTION_BANK.push({
+          id: i,
+          targetTier: isHigh ? "HIGH" : "LOW",
+          type: "FORMULA_CALC",
+          a: a, b: b, h: h,
+          text: `【公式應用計算】圖中梯形上底 ${a} cm，下底 ${b} cm，高 ${h} cm。請完整計算出梯形面積：`,
+          options: shuffleArray([
+            { text: `${area} cm²`, correct: true },
+            { text: `${(a + b) * h} cm²`, correct: false },
+            { text: `${area + 5} cm²`, correct: false },
+            { text: `${a + b + h} cm²`, correct: false }
+          ]),
+          explanation: `完整算式：(${a} + ${b}) × ${h} ÷ 2 = ${a + b} × ${h} ÷ 2 = ${area} cm²`,
+          critiquePrompt: "總檢討：確認學生掌握完整的梯形面積公式計算。"
+        });
+      }
+    }
+
+    function shuffleArray(arr) {
+      const array = [...arr];
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    /* VIEW SWITCHING LOGIC */
+    function switchView(view) {
+      activeView = view;
+
+      ["main", "g1", "g2", "g3", "g4"].forEach(v => {
+        const btn = document.getElementById(`btnView${v.toUpperCase()}`);
+        if (btn) {
+          if (v === view) {
+            btn.classList.add("bg-cyan-500", "text-slate-950", "shadow");
+            btn.classList.remove("text-cyan-400", "hover:bg-slate-900");
+          } else {
+            btn.classList.remove("bg-cyan-500", "text-slate-950", "shadow");
+            btn.classList.add("hover:bg-slate-900");
+          }
+        }
+      });
+
+      const mainEl = document.getElementById("mainScreenView");
+      const cockpitEl = document.getElementById("cockpitScreenView");
+
+      if (view === 'main') {
+        mainEl.classList.remove("hidden");
+        cockpitEl.classList.add("hidden");
+        renderMainView();
+      } else {
+        mainEl.classList.add("hidden");
+        cockpitEl.classList.remove("hidden");
+        renderCockpitView();
+      }
+    }
+
+    /* RENDER MAIN SCREEN VIEW */
+    function renderMainView() {
+      const container = document.getElementById("mainTracksContainer");
+      container.innerHTML = "";
+      const maxPos = Math.max(...groupPositions);
+
+      GROUPS.forEach((g, idx) => {
+        const lap = groupLaps[idx];
+        const pos = groupPositions[idx];
+        const pct = Math.min(100, Math.round((pos / 21) * 100));
+        const combo = groupCombos[idx];
+        const isLeader = pos > 0 && pos === maxPos;
+
+        const card = document.createElement("div");
+        card.className = `bg-slate-900/90 border-2 ${g.borderClass} rounded-3xl p-5 shadow-2xl space-y-3 relative overflow-hidden`;
+
+        card.innerHTML = `
+          <div class="flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-3">
+              <span class="w-9 h-9 rounded-2xl ${g.bgClass} text-slate-950 font-black flex items-center justify-center text-lg shadow">
+                ${g.id}
+              </span>
+              <div>
+                <h3 class="text-base md:text-lg font-black ${g.textClass} flex items-center gap-2">
+                  ${g.name}
+                  ${isLeader ? '<span class="bg-amber-400 text-slate-950 text-[10px] px-2 py-0.5 rounded-full font-black">👑 目前領先</span>' : ''}
+                </h3>
+                <p class="text-xs text-slate-400 font-bold">
+                  當前解題關卡：<strong class="text-cyan-400 font-tech">LAP ${String(Math.min(21, lap + 1)).padStart(2, '0')}/21</strong> 
+                  ｜ 指定：<span class="${QUESTION_BANK[Math.min(20, lap)]?.targetTier === 'HIGH' ? 'text-purple-300' : 'text-emerald-300'}">${QUESTION_BANK[Math.min(20, lap)]?.targetTier === 'HIGH' ? '高組員' : '初組員'}</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <div class="text-right">
+                <span class="font-tech text-amber-400 text-xl font-black block">${groupScores[idx]} PTS</span>
+                <span class="text-[11px] text-slate-400 font-bold">賽車進度：${pos} / 21 格</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative w-full bg-slate-950 h-8 rounded-2xl border-2 border-slate-800 p-1 flex items-center overflow-hidden">
+            <div class="h-full rounded-xl transition-all duration-500 ${g.bgClass} opacity-80" style="width: ${pct}%"></div>
+            <div class="absolute transition-all duration-500 flex items-center" style="left: calc(${Math.max(2, pct)}% - 22px)">
+              <div class="w-8 h-8 rounded-full bg-slate-900 border-2 ${g.borderClass} flex items-center justify-center text-sm shadow-lg">
+                🏎️
+              </div>
+              ${combo > 1 ? `<span class="ml-1 text-[9px] font-black text-amber-300 bg-amber-950 px-1.5 py-0.5 rounded-full border border-amber-700">Turbo x${combo}</span>` : ''}
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    /* RENDER IPAD COCKPIT VIEW */
+    function renderCockpitView() {
+      const groupIdx = parseInt(activeView.replace('g', '')) - 1;
+      const g = GROUPS[groupIdx];
+      const lap = groupLaps[groupIdx];
+
+      if (lap >= 21) {
+        showGroupFinishedState(groupIdx);
+        return;
+      }
+
+      const q = QUESTION_BANK[lap];
+      const sub = groupSubmissions[groupIdx];
+
+      const header = document.getElementById("cockpitHeader");
+      header.className = `p-4 rounded-3xl border-2 flex justify-between items-center bg-slate-900 ${g.borderClass}`;
+      
+      const badge = document.getElementById("cockpitGroupBadge");
+      badge.innerText = g.name;
+      badge.className = `text-base font-black px-4 py-1.5 rounded-2xl border ${g.textClass} ${g.borderClass} bg-slate-950`;
+
+      const tierTag = document.getElementById("cockpitTierTag");
+      tierTag.innerText = q.targetTier === "HIGH" ? "🎯 本題作答對象：高組組員" : "🌱 本題作答對象：初組組員";
+      tierTag.className = `text-xs font-black px-3 py-1 rounded-xl border ${q.targetTier === "HIGH" ? "bg-purple-950 text-purple-300 border-purple-800" : "bg-emerald-950 text-emerald-300 border-emerald-800"}`;
+
+      document.getElementById("cockpitPosBadge").innerText = `賽車位置：第 ${groupPositions[groupIdx]} / 21 格`;
+      document.getElementById("cockpitScore").innerText = `${groupScores[groupIdx]} PTS`;
+      document.getElementById("cockpitCombo").innerText = `🔥 x${groupCombos[groupIdx] + 1}`;
+      document.getElementById("cockpitLap").innerText = `LAP ${String(q.id).padStart(2, '0')}/21`;
+      document.getElementById("cockpitQuestionText").innerText = q.text;
+
+      drawIpadTrapezoidSVG(q.a, q.b, q.h, q);
+
+      const grid = document.getElementById("cockpitOptionsGrid");
+      grid.innerHTML = "";
+      const feedback = document.getElementById("cockpitFeedback");
+      const feedbackContent = document.getElementById("cockpitFeedbackContent");
+
+      if (sub) {
+        document.getElementById("cockpitStatusTag").innerText = "已完成本題作答";
+        feedback.classList.remove("hidden");
+        if (sub.isCorrect) {
+          feedback.className = "p-4 rounded-2xl border-2 bg-emerald-950/90 border-emerald-500 text-emerald-200 text-sm font-black space-y-3";
+          feedbackContent.innerHTML = `✓ 太棒了！答對囉！賽車前進！<br><span class="text-xs font-bold opacity-90">${q.explanation}</span>`;
+        } else {
+          feedback.className = "p-4 rounded-2xl border-2 bg-rose-950/90 border-rose-500 text-rose-200 text-sm font-black space-y-3";
+          feedbackContent.innerHTML = `✕ 答錯囉！請再仔細思考。<br><span class="text-xs font-bold opacity-90">${q.explanation}</span>`;
+        }
+      } else {
+        document.getElementById("cockpitStatusTag").innerText = "請進行作答";
+        feedback.classList.add("hidden");
+      }
+
+      // RENDER INTERACTIVE INPUTS BY QUESTION TYPE
+      if (q.id <= 6) {
+        renderInteractiveQ1to6(groupIdx, q, grid, sub);
+      } else {
+        renderOptionsGrid(groupIdx, q, grid, sub);
+      }
+    }
+
+    /* RENDER Q1-Q6 INTERACTIVE TYPES */
+    function renderInteractiveQ1to6(groupIdx, q, container, sub) {
+      if (q.type === "DRAG_MATCH") {
+        container.innerHTML = `
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 text-center">
+            <p class="text-xs text-amber-400 font-black">【點選配對】請點選下方對應的區域卡片：</p>
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="handleQ1Match(${groupIdx}, 'TOP')" ${sub ? 'disabled' : ''} class="py-3.5 bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-slate-100 font-black rounded-xl border-2 border-slate-700 transition">
+                頂部（上底）
+              </button>
+              <button onclick="handleQ1Match(${groupIdx}, 'BOTTOM')" ${sub ? 'disabled' : ''} class="py-3.5 bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-100 font-black rounded-xl border-2 border-slate-700 transition">
+                底部（下底）
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (q.type === "CLICK_NUMBER") {
+        container.innerHTML = `
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 text-center">
+            <p class="text-xs text-amber-400 font-black">【點選數值】請點選圖中對應的長度數值：</p>
+            <div class="grid grid-cols-3 gap-3">
+              <button onclick="handleClickNumber(${groupIdx}, '${q.targetKey}', 'A')" ${sub ? 'disabled' : ''} class="py-3 bg-slate-800 hover:bg-cyan-600 text-slate-100 font-black rounded-xl border-2 border-slate-700 transition text-base">
+                ${q.a} cm
+              </button>
+              <button onclick="handleClickNumber(${groupIdx}, '${q.targetKey}', 'B')" ${sub ? 'disabled' : ''} class="py-3 bg-slate-800 hover:bg-emerald-600 text-slate-100 font-black rounded-xl border-2 border-slate-700 transition text-base">
+                ${q.b} cm
+              </button>
+              <button onclick="handleClickNumber(${groupIdx}, '${q.targetKey}', 'H')" ${sub ? 'disabled' : ''} class="py-3 bg-slate-800 hover:bg-amber-600 text-slate-100 font-black rounded-xl border-2 border-slate-700 transition text-base">
+                ${q.h} cm
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (q.type === "MATCH_SYMBOL") {
+        container.innerHTML = `
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 text-center">
+            <p class="text-xs text-amber-400 font-black">【方格配對】請點選正確的除數數字：</p>
+            <div class="grid grid-cols-4 gap-2">
+              ${q.options.map(opt => `
+                <button onclick="handleSymbolMatch(${groupIdx}, '${opt}', '${q.correctVal}')" ${sub ? 'disabled' : ''} class="py-3 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-100 font-black rounded-xl border-2 border-slate-700 transition text-lg">
+                  ÷ ${opt}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function handleQ1Match(groupIdx, chosenPos) {
+      const q = QUESTION_BANK[groupLaps[groupIdx]];
+      const isCorrect = (chosenPos === q.correctPos || chosenPos === 'TOP');
+      handleCockpitAnswer(groupIdx, { text: `選擇 ${chosenPos}`, correct: isCorrect }, q);
+    }
+
+    function handleClickNumber(groupIdx, targetKey, clickedKey) {
+      const q = QUESTION_BANK[groupLaps[groupIdx]];
+      const isCorrect = (targetKey === clickedKey);
+      handleCockpitAnswer(groupIdx, { text: `點選數值 ${clickedKey}`, correct: isCorrect }, q);
+    }
+
+    function handleSymbolMatch(groupIdx, chosenVal, correctVal) {
+      const q = QUESTION_BANK[groupLaps[groupIdx]];
+      const isCorrect = (chosenVal === correctVal);
+      handleCockpitAnswer(groupIdx, { text: `除以 ${chosenVal}`, correct: isCorrect }, q);
+    }
+
+    /* RENDER MULTIPLE CHOICE & OTHER OPTIONS (Q7-Q21) */
+    function renderOptionsGrid(groupIdx, q, container, sub) {
+      const colsClass = q.options.length > 4 ? "grid-cols-2 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2";
+      const grid = document.createElement("div");
+      grid.className = `grid ${colsClass} gap-3.5`;
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.disabled = !!sub;
+        btn.className = `w-full py-4 px-5 bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 rounded-2xl text-slate-100 font-black text-base md:text-lg text-left transition flex items-center justify-between shadow-md ${sub ? 'opacity-50 cursor-not-allowed' : 'active:scale-98 hover:border-cyan-500'}`;
+        btn.innerHTML = `
+          <span><strong class="text-cyan-400 mr-2 font-tech">${String.fromCharCode(65 + idx)}.</strong> ${opt.text}</span>
+          <i class="fa-regular fa-circle text-slate-500 text-xl"></i>
+        `;
+        btn.onclick = () => handleCockpitAnswer(groupIdx, opt, q);
+        grid.appendChild(btn);
+      });
+
+      container.appendChild(grid);
+    }
+
+    /* DRAW SVG GEOMETRY */
+    function drawIpadTrapezoidSVG(a, b, h, q) {
+      const svg = document.getElementById("ipadTrapezoidSvg");
+      const scale = 11; 
+      const topWidth = Math.max(2.5, a) * scale;
+      const bottomWidth = Math.max(3.5, b) * scale;
+      const height = Math.max(3, h) * scale;
+
+      const startX = (400 - bottomWidth) / 2;
+      const startY = 150;
+
+      const p1 = { x: startX, y: startY };
+      const p2 = { x: startX + bottomWidth, y: startY };
+      const topStartX = startX + (bottomWidth - topWidth) / 2;
+      const p3 = { x: topStartX + topWidth, y: startY - height };
+      const p4 = { x: topStartX, y: startY - height };
+
+      svg.innerHTML = `
+        <polygon points="${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}" 
+                 fill="rgba(6, 182, 212, 0.2)" stroke="#06b6d4" stroke-width="3.5" stroke-linejoin="round"/>
+        
+        <line x1="${p4.x + 16}" y1="${p4.y}" x2="${p4.x + 16}" y2="${p1.y}" 
+              stroke="#f59e0b" stroke-width="3" stroke-dasharray="5,4" />
+        
+        <polyline points="${p4.x + 16},${p1.y - 10} ${p4.x + 26},${p1.y - 10} ${p4.x + 26},${p1.y}" 
+                  fill="none" stroke="#f59e0b" stroke-width="2"/>
+
+        <text x="${(p4.x + p3.x) / 2}" y="${p4.y - 12}" fill="#38bdf8" font-weight="900" font-size="15" text-anchor="middle">
+          上底 ${a} cm
+        </text>
+        <text x="${(p1.x + p2.x) / 2}" y="${p1.y + 24}" fill="#38bdf8" font-weight="900" font-size="15" text-anchor="middle">
+          下底 ${b} cm
+        </text>
+        <text x="${p4.x + 30}" y="${(p4.y + p1.y) / 2 + 4}" fill="#fbbf24" font-weight="900" font-size="14" text-anchor="start">
+          高 ${h} cm
+        </text>
+      `;
+    }
+
+    /* HANDLE COCKPIT ANSWER SUBMISSION */
+    function handleCockpitAnswer(groupIdx, selectedOpt, question) {
+      const isCorrect = selectedOpt.correct;
+      const currentCombo = groupCombos[groupIdx];
+
+      let stepForward = 0;
+      if (isCorrect) {
+        stepForward = (currentCombo >= 1) ? 2 : 1;
+        groupScores[groupIdx] += 100 * (currentCombo + 1);
+        groupPositions[groupIdx] = Math.min(21, groupPositions[groupIdx] + stepForward);
+        groupCombos[groupIdx] += 1;
+
+        if (stepForward > 1) sfx.playTurbo();
+        else sfx.playCorrect();
+
+        confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
+      } else {
+        groupCombos[groupIdx] = 0;
+        sfx.playWrong();
+      }
+
+      groupSubmissions[groupIdx] = {
+        isCorrect: isCorrect,
+        chosenText: selectedOpt.text
+      };
+
+      questionLogs.push({
+        lapId: question.id,
+        groupIdx: groupIdx,
+        groupName: GROUPS[groupIdx].name,
+        targetTier: question.targetTier,
+        questionText: question.text,
+        chosenText: selectedOpt.text,
+        isCorrect: isCorrect,
+        correctAnswer: question.options ? question.options.find(o => o.correct)?.text : "正確選項",
+        explanation: question.explanation,
+        critiquePrompt: question.critiquePrompt
+      });
+
+      renderCockpitView();
+    }
+
+    function advanceGroupNextLap() {
+      const groupIdx = parseInt(activeView.replace('g', '')) - 1;
+      groupLaps[groupIdx]++;
+      groupSubmissions[groupIdx] = null;
+      renderCockpitView();
+    }
+
+    function showGroupFinishedState(groupIdx) {
+      const grid = document.getElementById("cockpitOptionsGrid");
+      grid.innerHTML = "";
+      document.getElementById("cockpitQuestionText").innerText = "🎉 恭喜！貴組已順利完成全部 21 道關卡！";
+      document.getElementById("ipadTrapezoidSvg").innerHTML = `<text x="200" y="100" fill="#10b981" font-weight="900" font-size="24" text-anchor="middle">🏁 FINISHED!</text>`;
+
+      const feedback = document.getElementById("cockpitFeedback");
+      feedback.classList.remove("hidden");
+      feedback.className = "p-6 rounded-2xl border-2 bg-emerald-950 border-emerald-500 text-center space-y-3";
+      document.getElementById("cockpitFeedbackContent").innerHTML = `
+        <h4 class="text-xl font-black text-emerald-300">總成績：${groupScores[groupIdx]} PTS</h4>
+        <p class="text-xs text-slate-300">請等待其他小組完成，或由老師切換至大螢幕進行賽後檢討。</p>
+      `;
+      document.getElementById("btnCockpitNext").classList.add("hidden");
+    }
+
+    function checkGameEndOrShowSummary() {
+      finishGame();
+    }
+
+    /* POST-RACE SUMMARY & DIAGNOSTICS */
+    function finishGame() {
+      document.getElementById("mainScreenView").classList.add("hidden");
+      document.getElementById("cockpitScreenView").classList.add("hidden");
+      const summarySec = document.getElementById("summarySection");
+      summarySec.classList.remove("hidden");
+
+      const sortedGroups = GROUPS.map((g, idx) => ({
+        ...g,
+        score: groupScores[idx],
+        pos: groupPositions[idx],
+        completedLaps: groupLaps[idx]
+      })).sort((a, b) => b.pos - a.pos || b.score - a.score);
+
+      const podiumContainer = document.getElementById("podiumContainer");
+      podiumContainer.innerHTML = "";
+
+      const medals = ["🥇 第一名 冠軍", "🥈 第二名 亞軍", "🥉 第三名 季軍", "🏎️ 第四名 殿軍"];
+      sortedGroups.forEach((g, rank) => {
+        const cardHtml = `
+          <div class="bg-slate-950 border-2 border-slate-800 p-4 rounded-2xl text-center space-y-2 shadow-lg">
+            <span class="text-xs font-black px-3 py-1 rounded-full bg-slate-900 border border-slate-700 ${g.textClass}">${medals[rank]}</span>
+            <h4 class="font-black text-slate-100 text-base mt-1">${g.name}</h4>
+            <p class="font-tech text-xl font-black text-amber-400">${g.score} PTS</p>
+            <p class="text-xs font-bold text-slate-400">總步數：${g.pos} / 21 格 (答題至 LAP ${Math.min(21, g.completedLaps)})</p>
+          </div>
+        `;
+        podiumContainer.insertAdjacentHTML('beforeend', cardHtml);
+      });
+
+      const tbody = document.getElementById("errorTableBody");
+      tbody.innerHTML = "";
+
+      QUESTION_BANK.forEach(q => {
+        const groupAnswers = GROUPS.map((g, groupIdx) => {
+          const log = questionLogs.find(l => l.lapId === q.id && l.groupIdx === groupIdx);
+          return {
+            groupName: g.name,
+            colorClass: g.textClass,
+            log: log
+          };
+        });
+
+        const tierBadgeText = q.targetTier === "HIGH" ? "🎯 高組" : "🌱 初組";
+        const tierBadgeClass = q.targetTier === "HIGH" ? "bg-purple-950 text-purple-300" : "bg-emerald-950 text-emerald-300";
+
+        const answersHtml = groupAnswers.map(ga => {
+          if (!ga.log) return `<div class="text-xs text-slate-600"><span class="${ga.colorClass}">${ga.groupName.split(' ')[0]}</span>: 未作答</div>`;
+          const statusIcon = ga.log.isCorrect ? `<span class="text-emerald-400 font-bold">✓ 答對</span>` : `<span class="text-rose-400 font-bold">✕ 答錯 (${ga.log.chosenText})</span>`;
+          return `<div class="text-xs font-bold mb-1"><span class="${ga.colorClass}">${ga.groupName.split(' ')[0]}</span>: ${statusIcon}</div>`;
+        }).join("");
+
+        const rowHtml = `
+          <tr class="hover:bg-slate-900/50 transition">
+            <td class="p-3.5 font-tech font-black text-cyan-400">Q${q.id}</td>
+            <td class="p-3.5"><span class="px-2.5 py-1 rounded-xl text-xs font-black ${tierBadgeClass}">${tierBadgeText}</span></td>
+            <td class="p-3.5">
+              <p class="font-black text-slate-100 text-xs md:text-sm mb-1">${q.text}</p>
+              <p class="text-xs text-emerald-400 font-bold">解題核心：${q.explanation}</p>
+            </td>
+            <td class="p-3.5 bg-slate-950/40">${answersHtml}</td>
+            <td class="p-3.5">
+              <div class="bg-indigo-950/40 border border-indigo-800/60 p-2.5 rounded-xl text-xs text-indigo-200">
+                <strong class="text-cyan-300 font-black"><i class="fa-solid fa-comments"></i> 課堂討論指引：</strong>
+                ${q.critiquePrompt}
+              </div>
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', rowHtml);
+      });
+
+      confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    /* RESTART GAME RESET */
+    function restartGame() {
+      if (confirm("確定要重置賽局嗎？所有小組進度與積分將歸零。")) {
+        groupLaps = [0, 0, 0, 0];
+        groupScores = [0, 0, 0, 0];
+        groupPositions = [0, 0, 0, 0];
+        groupCombos = [0, 0, 0, 0];
+        groupSubmissions = [null, null, null, null];
+        questionLogs = [];
+
+        document.getElementById("summarySection").classList.add("hidden");
+        switchView('main');
+      }
+    }
+
+    /* MODAL TOGGLES */
+    function toggleBriefingModal() {
+      document.getElementById("briefingModal").classList.toggle("hidden");
+    }
+
+    function toggleHelperModal() {
+      document.getElementById("helperModal").classList.toggle("hidden");
+    }
+
+    /* INITIALIZATION */
+    window.onload = function() {
+      initQuestionBank();
+      switchView('main');
+    };
+  </script>
+</body>
+</html>
